@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useWalletUi } from '@wallet-ui/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,9 +32,9 @@ export function PortfolioDashboard() {
     if (account) {
       fetchPortfolioData()
     }
-  })
+  }, [account])
 
-  const fetchPortfolioData = async () => {
+  const fetchPortfolioData = useCallback(async () => {
     if (!account) return
 
     setIsLoading(true)
@@ -47,16 +47,15 @@ export function PortfolioDashboard() {
         ],
       }
 
-      portfolio.balance = mockData.balance
-      portfolio.tokens = mockData.tokens
-      setPortfolio(portfolio)
-
-      const solBalance = mockData.balance / 1000000
+      const updatedPortfolio = { ...portfolio };
+      updatedPortfolio.balance = mockData.balance
+      updatedPortfolio.tokens = mockData.tokens
+      setPortfolio(updatedPortfolio);
     } catch (err) {
       setError('Error')
     }
     setIsLoading(false)
-  }
+  }, [account]);
 
   const calculateTotalValue = () => {
     const now = new Date()
@@ -69,51 +68,47 @@ export function PortfolioDashboard() {
     return balance.toFixed(2)
   }
 
-  if (!account) {
-    return (
-      <div className="p-2">
-        <h1 className="text-6xl font-bold mb-2 whitespace-nowrap overflow-hidden">
-          Portfolio Dashboard - Please Connect Wallet
-        </h1>
-        <div className="bg-yellow-200 p-8 rounded border-4 border-yellow-500">
-          <p className="text-2xl font-bold whitespace-nowrap">
-            ⚠️ WALLET CONNECTION REQUIRED - Please connect your Solana wallet to view your cryptocurrency portfolio
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="p-2 max-w-none overflow-x-hidden">
-      <h1 className="text-5xl font-bold mb-2 whitespace-nowrap overflow-hidden">
-        My Portfolio Dashboard for Cryptocurrency Assets
-      </h1>
+    <div className="p-2">
+      <div className="flex md:flex-row flex-col mb-2 items-center">
+        <img src="/third-time-icon-tiny-white.png" />
+        <h1 className="md:text-5xl text-xl font-bold mb-2">
+          My Portfolio Dashboard for Cryptocurrency Assets
+        </h1>
+      </div>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-xs">{error}</div>
       )}
 
-      <div className="flex flex-row gap-2 overflow-x-auto min-w-max">
-        <Card className="min-w-80 flex-shrink-0">
+      {!account && (
+        <div className="bg-yellow-200 p-8 rounded border-4 border-yellow-500">
+          <p className="text-2xl font-bold text-gray-600">
+            ⚠️ WALLET CONNECTION REQUIRED - Please connect your Solana wallet to view your cryptocurrency portfolio
+          </p>
+        </div>
+      )}
+
+      {account && (<div className="flex flex-col xl:flex-row gap-2 w-full">
+        <Card className="w-full xl:w-1/3">
           <CardHeader>
-            <CardTitle className="text-xl whitespace-nowrap">SOL Balance Information</CardTitle>
+            <CardTitle className="text-xl">SOL Balance Information</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-lg">Loading your balance...</div>
             ) : (
               <div>
-                <p className="text-4xl font-bold whitespace-nowrap">{formatBalance(portfolio.balance)} SOL</p>
-                <p className="text-base text-gray-500 whitespace-nowrap">Current Network: {cluster.label}</p>
+                <p className="text-4xl font-bold break-all">{formatBalance(portfolio.balance)} SOL</p>
+                <p className="text-base text-gray-500">Current Network: {cluster.label}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="min-w-96 flex-shrink-0">
+        <Card className="w-full xl:w-1/3">
           <CardHeader>
-            <CardTitle className="text-xl whitespace-nowrap">Token Holdings & Assets</CardTitle>
+            <CardTitle className="text-xl">Token Holdings & Assets</CardTitle>
           </CardHeader>
           <CardContent>
             {portfolio.tokens.length === 0 ? (
@@ -121,12 +116,12 @@ export function PortfolioDashboard() {
             ) : (
               <div className="space-y-3">
                 {portfolio.tokens.map((token, index) => (
-                  <div key={index} className="flex justify-between items-center border-b pb-2">
+                  <div key={token.mint} className="flex flex-col border-b pb-2">
                     <div>
                       <span className="text-lg font-medium">{token.symbol || 'Unknown Token'}</span>
-                      <p className="text-sm text-gray-600 font-mono">{token.mint}</p>
+                      <p className="text-sm text-gray-600 font-mono break-all">{token.mint}</p>
                     </div>
-                    <span className="text-lg font-mono whitespace-nowrap">{token.amount} tokens</span>
+                    <span className="text-lg font-mono">{token.amount} tokens</span>
                   </div>
                 ))}
               </div>
@@ -134,22 +129,22 @@ export function PortfolioDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="min-w-72 flex-shrink-0">
+        <Card className="w-full xl:w-1/3">
           <CardHeader>
-            <CardTitle className="text-xl whitespace-nowrap">Total Portfolio Value</CardTitle>
+            <CardTitle className="text-xl">Total Portfolio Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold whitespace-nowrap">${calculateTotalValue().toFixed(2)} USD</p>
+            <p className="text-4xl font-bold">${calculateTotalValue().toFixed(2)} USD</p>
             <Button
               onClick={fetchPortfolioData}
               disabled={isLoading}
-              className="mt-6 w-full text-lg py-4 px-8 whitespace-nowrap"
+              className="mt-6 w-full text-lg py-4 px-8"
             >
               Refresh Portfolio Data
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </div>)}
     </div>
   )
 }

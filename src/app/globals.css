@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import "tailwindcss/utilities";
 @import 'tw-animate-css';
 @import '@wallet-ui/tailwind/index.css';
 
